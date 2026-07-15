@@ -1,5 +1,23 @@
 # Changelog
 
+## Pre-launch security hardening
+
+Prep for putting the app on the public internet (Netlify). No UI/behavior changes for normal use.
+
+- **Rate limiting.** New `rate_limits` table + `checkRateLimit()` in `lib/db.js`, wrapped by `lib/rateLimit.js`. Applied to: login (15 attempts / 10 min / IP), signup (8 / hour / IP), AI Coach (40 messages / hour / account — caps per-account AI spend). Over the limit returns `429` with a translated `too_many_requests` message (EN/VI).
+- **Secure cookies.** Session cookie now sets `secure: true` when `NODE_ENV=production`, so it's HTTPS-only once deployed (localhost dev is unaffected).
+- **Security headers.** `next.config.mjs` now sends `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and `Strict-Transport-Security` on every route.
+- **Login timing.** A non-existent email now hashes against a fixed dummy password instead of short-circuiting, so response time doesn't reveal whether an email is registered.
+- **Signup validation.** Rejects malformed email addresses; minimum password length raised 6 → 8 characters (i18n strings updated in both languages).
+
+Verified: `next build` compiles cleanly (23/23 pages, unchanged); ran against a real local Postgres — signup/login/rate-limit behavior confirmed end-to-end (short password → `400`, bad email → `400`, valid signup → session cookie with `Secure` flag, 15 login attempts allowed then `429`, security headers present on `/`).
+
+Not in this pass (tracked in DECISIONS.md #7): email verification, password reset, CSRF tokens (judged low-risk for this app's JSON+SameSite=Lax API shape).
+
+Files touched: `lib/db.js`, `lib/rateLimit.js` (new), `lib/auth.js`, `next.config.mjs`, `app/api/auth/login/route.js`, `app/api/auth/signup/route.js`, `app/api/coach/route.js`, `lib/i18n.js`.
+
+---
+
 ## Vietnamese copy pass 2 — refinement
 
 A second review focused on the few strings still short of professional native UX writing. Same scope rules: Vietnamese copy only, no logic/keys/layout/English touched, lengths kept similar.

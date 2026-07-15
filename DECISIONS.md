@@ -23,8 +23,14 @@ One memorable mark used consistently (logo, auth screens, paywall, print headers
 ## 6. Postgres storage (moved off JSON files for public deployment)
 `/data/*.json` was right-sized for a local, single-machine demo but has no place on a serverless host (Vercel/Netlify functions have an ephemeral filesystem — writes wouldn't persist) and had a lost-update race on `users.json` under concurrent signups. Moved to three Postgres tables (`users`, `sessions`, `user_state`) behind the same `lib/db.js` function names, so `auth.js` and the API routes only needed `await` added, not rewritten. Tables are created with idempotent `CREATE TABLE IF NOT EXISTS` on first connection — no manual migration step.
 
-## 7. Demo-grade auth — still not fully production-hardened
-scrypt-hashed passwords, random session tokens, httpOnly cookie, now stored in Postgres instead of a JSON file. Still missing on purpose for this beta: rate limiting, CSRF tokens, email verification, password reset, secure-cookie flag behind TLS. These are the first items to add before charging real money.
+## 7. Demo-grade auth — hardened, still not fully production-ready
+scrypt-hashed passwords, random session tokens, httpOnly cookie, stored in Postgres instead of a JSON file.
+
+Added for launch: session cookie now sets `secure: true` when `NODE_ENV=production` (HTTPS-only, matches Netlify); login/signup/coach are rate-limited via a Postgres-backed fixed-window counter keyed by IP (login) or user id (coach) — see `lib/rateLimit.js` and `checkRateLimit` in `lib/db.js`; login compares against a fixed dummy hash when the email doesn't exist, so a failed login takes about the same time whether or not the account exists (reduces email-enumeration via timing); signup validates email format and requires an 8-character password (was 6); `next.config.mjs` sends baseline security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, HSTS) on every route.
+
+CSRF is not implemented as a separate token, and that's an intentional call, not an oversight: all mutating routes are JSON APIs read via `fetch` with a `SameSite=Lax` cookie, which browsers do not attach on cross-site non-navigation requests — the practical CSRF surface for this app is already small. Revisit if a route ever accepts `multipart/form-data` or a plain HTML form POST.
+
+Still missing on purpose for this beta: email verification, password reset, per-account (not just per-IP) login throttling. These are the next items to add before charging real money — password reset in particular needs an email-sending provider (e.g. Resend) that isn't wired up yet.
 
 ## 8. Subscription is a real flow with a demo checkout
 Trial (7 days, timestamp on the user record) → expiry computed on every request → non-active users hit a paywall on app pages and a 402 on the coach API. "Checkout" activates the plan instantly and says so on the page ("Demo checkout — no real payment is made"). Rationale: validates the full monetization UX without pretending to process cards. Stripe can slot into `POST /api/subscribe` later.

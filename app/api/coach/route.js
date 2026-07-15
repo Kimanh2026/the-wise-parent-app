@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { getSessionUser, subscriptionStatus } from "@/lib/auth";
 import { getUserState, saveUserState } from "@/lib/db";
 import { askCoach, hasApiKey } from "@/lib/coach";
+import { isRateLimited } from "@/lib/rateLimit";
 
 export async function POST(req) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!subscriptionStatus(user).active) {
     return NextResponse.json({ error: "subscription_required" }, { status: 402 });
+  }
+  // Keyed by user (not IP) since the caller is already authenticated — caps
+  // per-account AI spend and stops a single account from being scripted.
+  if (await isRateLimited("coach", user.id, { limit: 40, windowMs: 60 * 60 * 1000 })) {
+    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
   const { messages } = await req.json().catch(() => ({}));
   if (!Array.isArray(messages) || messages.length === 0) {
