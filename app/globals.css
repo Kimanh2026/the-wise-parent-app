@@ -184,13 +184,12 @@ html.dark .chip { color: var(--pine); }
 
 .divider { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
 
-/* ensō — the signature ring */
+/* lotus — the signature mark */
 .enso { display: inline-block; }
-.enso circle {
-  fill: none; stroke: var(--pine); stroke-width: 7;
-  stroke-linecap: round; stroke-dasharray: 260 40; transform-origin: center;
-  transform: rotate(-70deg);
-}
+.enso .petal { fill: var(--pine); }
+.enso .petal-a { opacity: 0.55; }
+.enso .petal-b { opacity: 0.8; }
+.enso .petal-c { opacity: 1; }
 .enso .dot { fill: var(--lantern); stroke: none; }
 
 /* story page prose */
