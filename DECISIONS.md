@@ -44,5 +44,8 @@ Days unlock one at a time. Behavioral rationale: completion of small commitments
 ## 11. Printables via print CSS, not PDF generation
 `/toolkit/print/[tool]` pages are print-styled (sidebar/nav hidden, clean tables, blank rows when data is empty so sheets work as paper forms). Browser Print → Save as PDF replaces a server-side PDF library — one less dependency, identical result for home printing.
 
+## 12b. Google sign-in via ID-token flow, not full OAuth redirect / NextAuth
+Chose Google Identity Services' client-side button + ID-token verification over (a) a full OAuth 2.0 authorization-code redirect flow or (b) pulling in NextAuth/Auth.js. Reasoning: the app only needs *identity* (who is this person), not access to any Google API on the user's behalf, so the lighter ID-token flow is sufficient and needs only a public Client ID — no client secret, no redirect URI configuration, no server-side token exchange. Adding NextAuth would have meant migrating the existing custom session/cookie system for one feature; instead Google sign-in plugs into the same `createSession`/`setSessionCookie` primitives email login already uses. Trade-off: if the app later needs to *act* on the user's Google account (e.g. Calendar), a real OAuth flow would be needed then — not before.
+
 ## 12. Bilingual as data, not translation layer
 All content (stories, library, reset days, tips, coach fallbacks) is authored in both English and Vietnamese side by side (`{ en: {...}, vi: {...} }`), and the UI dictionary lives in `lib/i18n.js`. Language is a per-user setting and also affects the live coach's reply language.

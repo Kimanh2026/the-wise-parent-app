@@ -1,5 +1,22 @@
 # Changelog
 
+## "Continue with Google" sign-in
+
+Added Google sign-in as a one-click alternative to email/password, to lower signup friction for real users. Uses Google Identity Services' ID-token flow (client-side button, server verifies the signed token) — no OAuth redirect dance, no client secret needed, just a public Client ID.
+
+- **`components/GoogleButton.js`** — renders Google's own button (loads their script on demand). Completely optional: if `NEXT_PUBLIC_GOOGLE_CLIENT_ID` isn't set, the component renders nothing and email/password keeps working exactly as before. Shown on both `/login` and `/signup`, above a new "or" divider.
+- **`app/api/auth/google/route.js`** — verifies the ID token server-side (`lib/googleAuth.js`, via `google-auth-library`), then: matches an existing account by Google's user id, or by email (auto-links so someone who signed up with a password can switch to "Continue with Google" later), or creates a new account. Same session/cookie flow as email login. Rate-limited (20/10min/IP).
+- **`lib/db.js`** — `users.password_hash` is now nullable (Google-only accounts have none) and a new unique `google_sub` column stores Google's account id. Migration is the same idempotent `ADD COLUMN IF NOT EXISTS` pattern as the rest of the schema, so it applies automatically to the existing production table — no manual migration step. Verified against a copy of the pre-existing schema, not just a fresh database.
+- Existing password login is untouched and still works for accounts that never touch Google.
+
+Setup required (see `.env.example`): create an OAuth Client ID (not a secret) in Google Cloud Console and set `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. Nothing else changes if this is left unset.
+
+Verified: `next build` compiles cleanly (24/24 pages); tested end-to-end against a real Postgres seeded with the *old* schema (pre-migration) — migration applied automatically, signup/login/duplicate-email/short-password all behave correctly, and a malformed Google token is safely rejected (401) rather than crashing the route.
+
+Files touched: `package.json`, `lib/db.js`, `lib/auth.js`, `lib/googleAuth.js` (new), `app/api/auth/google/route.js` (new), `components/GoogleButton.js` (new), `components/AuthForm.js`, `lib/i18n.js`, `.env.example`.
+
+---
+
 ## Pre-launch security hardening
 
 Prep for putting the app on the public internet (Netlify). No UI/behavior changes for normal use.

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "./Providers";
 import Enso from "./Enso";
+import GoogleButton from "./GoogleButton";
 
 export default function AuthForm({ mode }) {
   const { t, lang, setLang, refresh } = useApp();
@@ -45,6 +46,14 @@ export default function AuthForm({ mode }) {
           <h2 style={{ marginTop: 10 }}>{isSignup ? t.auth.createAccount : t.auth.welcomeBack}</h2>
           {isSignup && <p className="muted small" style={{ margin: "6px 0 0" }}>{t.auth.trialNote}</p>}
         </div>
+        <GoogleButton onError={(code) => setError(t.auth.errors[code] || t.auth.errors.invalid)} />
+        {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 16px", color: "var(--muted)" }}>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            <span className="small">{t.auth.orDivider}</span>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+          </div>
+        )}
         <form onSubmit={submit}>
           {isSignup && (
             <div className="field">
@@ -58,7 +67,7 @@ export default function AuthForm({ mode }) {
           </div>
           <div className="field">
             <label>{t.auth.password}</label>
-            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
           </div>
           {error && <div className="banner error small" style={{ marginBottom: 12 }}>{error}</div>}
           <button className="btn" style={{ width: "100%" }} disabled={busy}>
