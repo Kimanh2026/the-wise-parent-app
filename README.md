@@ -16,13 +16,13 @@ npm run dev      # http://localhost:3000
 
 ## Enabling the live AI Coach
 
-The AI Coach works out of the box using a built-in offline "Wisdom Guide" (curated, rule-based replies). To enable live Claude coaching:
+The AI Coach works out of the box using a built-in offline "Wisdom Guide" (curated, rule-based replies). To enable live coaching:
 
 1. Copy `.env.example` to `.env.local`
-2. Set `ANTHROPIC_API_KEY=sk-ant-...` (get a key at console.anthropic.com)
+2. Set `GEMINI_API_KEY=...` — free tier, get a key in one click at https://aistudio.google.com/apikey (no billing required), **or** `ANTHROPIC_API_KEY=sk-ant-...` from console.anthropic.com (paid)
 3. Restart the server
 
-The key lives only on the server. End users never see or enter an API key. If the key is missing or the API errors, the app degrades gracefully to the Wisdom Guide and tells the user (Settings → About shows current AI status).
+Gemini is tried first if both keys are set. Keys live only on the server — end users never see or enter one. If no key is configured or a provider errors, the app degrades gracefully to the Wisdom Guide and tells the user (Settings → About shows current AI status). Provider selection logic lives in `lib/coach.js`; curated grounding material (e.g. exported from NotebookLM) can be added in `lib/coachSources.js` to steer replies toward specific sources.
 
 ## What's inside
 

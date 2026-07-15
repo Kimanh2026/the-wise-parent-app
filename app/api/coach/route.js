@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser, subscriptionStatus } from "@/lib/auth";
 import { getUserState, saveUserState } from "@/lib/db";
-import { askCoach, hasApiKey } from "@/lib/anthropic";
+import { askCoach, hasApiKey } from "@/lib/coach";
 
 export async function POST(req) {
   const user = await getSessionUser();
