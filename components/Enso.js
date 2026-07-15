@@ -1,0 +1,8 @@
+export default function Enso({ size = 34 }) {
+  return (
+    <svg className="enso" width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="40" />
+      <circle className="dot" cx="50" cy="50" r="7" />
+    </svg>
+  );
+}
