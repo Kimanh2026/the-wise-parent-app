@@ -58,7 +58,7 @@ export default function AuthForm({ mode }) {
           </div>
           <div className="field">
             <label>{t.auth.password}</label>
-            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
+            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
           </div>
           {error && <div className="banner error small" style={{ marginBottom: 12 }}>{error}</div>}
           <button className="btn" style={{ width: "100%" }} disabled={busy}>
