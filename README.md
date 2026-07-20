@@ -36,13 +36,26 @@ Gemini is tried first if both keys are set. Keys live only on the server — end
 | 7-Day Reset | `/reset` | Sequential day unlock, notes per day |
 | Progress | `/progress` | Streaks, missions, saved stories, favorite lessons |
 | Settings | `/settings` | Language (EN/VI), theme, profile, children, subscription, AI status |
-| Pricing | `/pricing` | Trial 7 days → Monthly $9.99 or Yearly $79.99. Demo checkout — no real payment |
+| Pricing | `/pricing` | Trial 7 days → Monthly $9.99 or Yearly $79.99. Real payment via Stripe or PayPal/Zalo if configured (see below), demo checkout otherwise |
+| Admin | `/admin` | Owner-only dashboard to confirm manual PayPal/Zalo payments (needs `ADMIN_SECRET`) |
 
 ## Data & auth
 
 - All data lives in Postgres (`DATABASE_URL`): `users`, `sessions`, `user_state` tables. Tables are created automatically on first connection — no manual migration step.
 - Passwords are scrypt-hashed. Sessions use an httpOnly cookie referencing a row in `sessions`.
-- Still not fully hardened for production: no rate limiting, CSRF tokens, email verification, or password reset yet — see DECISIONS.md before charging real money.
+- Rate limiting is in place on login/signup/coach/admin-login. Not yet done: CSRF tokens on the original auth routes (the new admin + payment routes below have their own double-submit CSRF check), email verification, password reset — see DECISIONS.md before charging real money.
+
+## Payments
+
+Three ways a plan gets activated, in order of what's configured:
+
+1. **Stripe (real card payments)** — set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` (Price IDs from your Stripe Dashboard → Product catalog, one recurring price per plan). Checkout runs on Stripe's hosted page — no card data touches this app. Subscription state is driven by the `customer.subscription.*` webhook events, not the checkout redirect, so point a Stripe webhook endpoint at `/api/webhooks/stripe` (events: `customer.subscription.created`, `.updated`, `.deleted`). Users can self-manage/cancel via the Billing Portal button on Settings once they've paid once.
+2. **PayPal / Zalo (manual)** — always available, needs zero configuration. Every plan on Pricing has an "Or pay via PayPal / bank transfer" option using the PayPal.me link and Zalo QR code in `lib/manualPayment.js` — **replace the placeholders there with your real link and QR image** (also swap `public/zalo-qr-placeholder.png`) before this goes live. Since these have no webhook, the customer clicking "I've paid" just flags their account for you to confirm at `/admin`.
+3. **Demo checkout** — if none of the above apply, "Pay with card" activates the plan instantly with no real charge. This is what the app runs in from a fresh clone.
+
+### `/admin` — confirming manual payments
+
+Set `ADMIN_SECRET` (a password only you know) to enable `/admin`: a single-login dashboard (not a second user role) listing pending PayPal/Zalo requests with one-click Activate/Dismiss, plus a manual "activate by email" lookup for customers who pay via Zalo without clicking the in-app button. Optionally set `ADMIN_EMAIL` + `RESEND_API_KEY` to get an email ping whenever someone submits a request — without those, requests still show up in `/admin`, you just won't get notified.
 
 ## Languages & themes
 

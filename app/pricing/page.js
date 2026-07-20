@@ -1,31 +1,84 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/Providers";
 import Enso from "@/components/Enso";
+import { PAYPAL_ME_LINK, ZALO_CONTACT_NAME, ZALO_QR_IMAGE, ZALO_NOTE } from "@/lib/manualPayment";
 
 export default function PricingPage() {
-  const { user, t, refresh } = useApp();
+  const { user, lang, t, refresh } = useApp();
   const router = useRouter();
   const [confirming, setConfirming] = useState(null); // "monthly" | "yearly" | null
+  const [manualPlan, setManualPlan] = useState(null); // "monthly" | "yearly" | null — manual-payment modal
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [csrf, setCsrf] = useState("");
+  const [paidSent, setPaidSent] = useState(false);
+  const [checkoutMsg, setCheckoutMsg] = useState(null); // "success" | "cancelled" | null
 
   const sub = user?.subscriptionStatus;
+  const rawSub = user?.subscription;
 
-  async function subscribe(plan) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (checkout === "success") {
+      setCheckoutMsg("success");
+      refresh();
+    } else if (checkout === "cancelled") {
+      setCheckoutMsg("cancelled");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function ensureCsrf() {
+    if (csrf) return csrf;
+    const res = await fetch("/api/csrf");
+    const data = await res.json();
+    setCsrf(data.token);
+    return data.token;
+  }
+
+  async function payWithCard(plan) {
     setBusy(true);
-    const res = await fetch("/api/subscribe", {
+    const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan }),
     });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
     setBusy(false);
     if (res.ok) {
       await refresh();
       setConfirming(null);
       setDone(true);
+    }
+  }
+
+  function openManual(plan) {
+    setConfirming(null);
+    setManualPlan(plan);
+    setPaidSent(false);
+    ensureCsrf();
+  }
+
+  async function submitManualPaid(method) {
+    setBusy(true);
+    const token = await ensureCsrf();
+    const res = await fetch("/api/manual-payment/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-csrf-token": token },
+      body: JSON.stringify({ plan: manualPlan, method }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      setPaidSent(true);
+      await refresh();
     }
   }
 
@@ -46,7 +99,11 @@ export default function PricingPage() {
         <p className="muted" style={{ marginTop: 6 }}>{t.pricing.subtitle}</p>
         {sub?.plan === "trial" && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>⏳ {t.pricing.trialBanner(sub.daysLeft)}</div>}
         {sub?.plan === "expired" && <div className="banner error small" style={{ display: "inline-block", marginTop: 14 }}>{t.pricing.expiredBanner}</div>}
+        {rawSub?.pendingRequest && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>🕓 {t.pricing.pendingNotice}</div>}
+        {rawSub?.stripeStatus === "past_due" && <div className="banner error small" style={{ display: "inline-block", marginTop: 14 }}>{t.pricing.pastDueNotice}</div>}
         {done && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>🎉 {t.pricing.success}</div>}
+        {checkoutMsg === "success" && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>🎉 {t.pricing.checkoutSuccess}</div>}
+        {checkoutMsg === "cancelled" && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>{t.pricing.checkoutCancelled}</div>}
       </header>
 
       <div className="grid2">
@@ -90,6 +147,7 @@ export default function PricingPage() {
         </p>
       )}
 
+      {/* Step 1: choose how to pay */}
       {confirming && (
         <div className="modal-backdrop" onClick={() => !busy && setConfirming(null)}>
           <div className="card" style={{ maxWidth: 380, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
@@ -97,13 +155,56 @@ export default function PricingPage() {
             <p className="muted" style={{ margin: "10px 0 4px" }}>
               {confirming === "monthly" ? `${t.pricing.monthlyName} — $9.99/${t.pricing.perMonth}` : `${t.pricing.yearlyName} — $79.99/${t.pricing.perYear}`}
             </p>
-            <p className="small muted">{t.pricing.demoNote}</p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-              <button className="btn lantern" style={{ flex: 1 }} disabled={busy} onClick={() => subscribe(confirming)}>
-                {busy ? t.common.loading : t.pricing.confirm}
+              <button className="btn lantern" style={{ flex: 1 }} disabled={busy} onClick={() => payWithCard(confirming)}>
+                {busy ? t.common.loading : t.pricing.payWithCard}
               </button>
               <button className="btn ghost" disabled={busy} onClick={() => setConfirming(null)}>{t.pricing.cancel}</button>
             </div>
+            <button
+              className="small"
+              style={{ marginTop: 14, background: "none", border: "none", cursor: "pointer", color: "var(--pine-deep)", fontWeight: 600, textDecoration: "underline" }}
+              disabled={busy}
+              onClick={() => openManual(confirming)}
+            >
+              {t.pricing.orManual}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: PayPal / Zalo manual payment */}
+      {manualPlan && (
+        <div className="modal-backdrop" onClick={() => !busy && setManualPlan(null)}>
+          <div className="card" style={{ maxWidth: 420, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
+            <h3>{t.pricing.manualTitle}</h3>
+            <p className="muted small" style={{ margin: "8px 0 16px" }}>{t.pricing.manualIntro}</p>
+
+            {paidSent ? (
+              <div className="banner small">✓ {t.pricing.iPaidSent}</div>
+            ) : (
+              <>
+                <div style={{ paddingBottom: 16, borderBottom: "1px solid #eee" }}>
+                  <a href={PAYPAL_ME_LINK} target="_blank" rel="noopener noreferrer" className="btn" style={{ width: "100%", textAlign: "center", display: "block", marginBottom: 10 }}>
+                    {t.pricing.paypalBtn}
+                  </a>
+                  <button className="btn lantern sm" style={{ width: "100%" }} disabled={busy} onClick={() => submitManualPaid("paypal")}>
+                    {t.pricing.iPaid}
+                  </button>
+                </div>
+                <div style={{ paddingTop: 16 }}>
+                  <p style={{ fontWeight: 600, marginBottom: 8 }}>{t.pricing.zaloTitle}</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ZALO_QR_IMAGE} alt="Zalo QR" style={{ width: 160, height: 160, display: "block", margin: "0 auto 8px", borderRadius: 8 }} />
+                  <p className="small muted" style={{ textAlign: "center" }}>{(ZALO_NOTE[lang] || ZALO_NOTE.en)} ({ZALO_CONTACT_NAME})</p>
+                  <button className="btn lantern sm" style={{ width: "100%", marginTop: 10 }} disabled={busy} onClick={() => submitManualPaid("zalo")}>
+                    {t.pricing.iPaid}
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button className="btn ghost sm" style={{ width: "100%", marginTop: 16 }} onClick={() => setManualPlan(null)}>{t.pricing.cancel}</button>
           </div>
         </div>
       )}

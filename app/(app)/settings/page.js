@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [savedNote, setSavedNote] = useState(false);
   const [child, setChild] = useState({ name: "", age: "" });
   const [aiLive, setAiLive] = useState(null);
+  const [billingBusy, setBillingBusy] = useState(false);
 
   useEffect(() => {
     if (user) setName(user.name || "");
@@ -45,6 +46,14 @@ export default function SettingsPage() {
 
   async function removeChild(i) {
     await patchUser({ children: children.filter((_, j) => j !== i) });
+  }
+
+  async function openBillingPortal() {
+    setBillingBusy(true);
+    const res = await fetch("/api/billing-portal", { method: "POST" });
+    const data = await res.json();
+    setBillingBusy(false);
+    if (data.url) window.location.href = data.url;
   }
 
   async function logout() {
@@ -126,8 +135,18 @@ export default function SettingsPage() {
             <span className={`chip ${sub.active ? "amber" : ""}`}>{planLabel}</span>
             {sub.plan === "trial" && <p className="small muted" style={{ marginTop: 8 }}>{t.pricing.trialBanner(sub.daysLeft)}</p>}
             {sub.plan === "expired" && <p className="small muted" style={{ marginTop: 8 }}>{t.pricing.expiredBanner}</p>}
+            {user.subscription?.stripeStatus === "past_due" && (
+              <p className="small" style={{ marginTop: 8, color: "#c0392b" }}>{t.settings.pastDue}</p>
+            )}
           </div>
-          <Link href="/pricing" className="btn secondary sm">{t.settings.manage}</Link>
+          <div style={{ display: "flex", gap: 8 }}>
+            {user.subscription?.stripeCustomerId && (
+              <button className="btn secondary sm" disabled={billingBusy} onClick={openBillingPortal}>
+                {billingBusy ? t.common.loading : t.settings.manageBilling}
+              </button>
+            )}
+            <Link href="/pricing" className="btn secondary sm">{t.settings.manage}</Link>
+          </div>
         </div>
       </div>
 
