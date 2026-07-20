@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/Providers";
 import Enso from "@/components/Enso";
-import { PAYPAL_ME_LINK, ZALO_CONTACT_NAME, ZALO_QR_IMAGE, ZALO_NOTE } from "@/lib/manualPayment";
+import { paypalMeLink, ZALO_CONTACT_NAME, ZALO_QR_IMAGE, ZALO_NOTE } from "@/lib/manualPayment";
 
 export default function PricingPage() {
   const { user, lang, t, refresh } = useApp();
@@ -185,7 +185,7 @@ export default function PricingPage() {
             ) : (
               <>
                 <div style={{ paddingBottom: 16, borderBottom: "1px solid #eee" }}>
-                  <a href={PAYPAL_ME_LINK} target="_blank" rel="noopener noreferrer" className="btn" style={{ width: "100%", textAlign: "center", display: "block", marginBottom: 10 }}>
+                  <a href={paypalMeLink(manualPlan)} target="_blank" rel="noopener noreferrer" className="btn" style={{ width: "100%", textAlign: "center", display: "block", marginBottom: 10 }}>
                     {t.pricing.paypalBtn}
                   </a>
                   <button className="btn lantern sm" style={{ width: "100%" }} disabled={busy} onClick={() => submitManualPaid("paypal")}>
