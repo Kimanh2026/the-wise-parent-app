@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/components/Providers";
+import CoachMessage from "@/components/CoachMessage";
 
 function CoachInner() {
   const { state, updateState, t } = useApp();
@@ -90,7 +91,9 @@ function CoachInner() {
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}`}>{m.content}</div>
+          <div key={i} className={`msg ${m.role}`}>
+            {m.role === "assistant" ? <CoachMessage text={m.content} /> : m.content}
+          </div>
         ))}
         {busy && <div className="msg assistant typing">{t.coach.thinking}</div>}
         {notice && <div className="banner small">💡 {notice}</div>}
