@@ -13,6 +13,9 @@ export default function SettingsPage() {
   const [child, setChild] = useState({ name: "", age: "" });
   const [aiLive, setAiLive] = useState(null);
   const [billingBusy, setBillingBusy] = useState(false);
+  const [cancelConfirming, setCancelConfirming] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
 
   useEffect(() => {
     if (user) setName(user.name || "");
@@ -55,6 +58,22 @@ export default function SettingsPage() {
     const data = await res.json();
     setBillingBusy(false);
     if (data.url) window.location.href = data.url;
+  }
+
+  async function cancelSubscription() {
+    setCancelBusy(true);
+    const csrfRes = await fetch("/api/csrf");
+    const { token } = await csrfRes.json();
+    const res = await fetch("/api/subscription/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-csrf-token": token },
+    });
+    setCancelBusy(false);
+    if (res.ok) {
+      setCancelConfirming(false);
+      setCancelled(true);
+      await refresh();
+    }
   }
 
   async function logout() {
@@ -139,17 +158,36 @@ export default function SettingsPage() {
             {user.subscription?.stripeStatus === "past_due" && (
               <p className="small" style={{ marginTop: 8, color: "#c0392b" }}>{t.settings.pastDue}</p>
             )}
+            {cancelled && <p className="small" style={{ marginTop: 8, color: "var(--pine-deep)" }}>✓ {t.settings.cancelledNote}</p>}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {user.subscription?.stripeCustomerId && (
               <button className="btn secondary sm" disabled={billingBusy} onClick={openBillingPortal}>
                 {billingBusy ? t.common.loading : t.settings.manageBilling}
               </button>
             )}
             <Link href="/pricing" className="btn secondary sm">{t.settings.manage}</Link>
+            {!user.subscription?.stripeCustomerId && (sub.plan === "monthly" || sub.plan === "yearly") && (
+              <button className="btn ghost sm" onClick={() => setCancelConfirming(true)}>{t.settings.cancelPlan}</button>
+            )}
           </div>
         </div>
       </div>
+
+      {cancelConfirming && (
+        <div className="modal-backdrop" onClick={() => !cancelBusy && setCancelConfirming(false)}>
+          <div className="card" style={{ maxWidth: 380, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
+            <h3>{t.settings.cancelConfirmTitle}</h3>
+            <p className="muted small" style={{ marginTop: 10 }}>{t.settings.cancelConfirmBody}</p>
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button className="btn danger" style={{ flex: 1 }} disabled={cancelBusy} onClick={cancelSubscription}>
+                {cancelBusy ? t.common.loading : t.settings.cancelConfirmYes}
+              </button>
+              <button className="btn ghost" disabled={cancelBusy} onClick={() => setCancelConfirming(false)}>{t.settings.cancelConfirmNo}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI status */}
       <div className="card">
