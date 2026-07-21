@@ -193,7 +193,8 @@ export default function PricingPage() {
           <div className="card" style={{ maxWidth: 420, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
             <h3>{t.pricing.manualTitle}</h3>
             {cardUnavailable && <div className="banner small" style={{ margin: "8px 0" }}>{t.pricing.cardUnavailable}</div>}
-            <p className="muted small" style={{ margin: "8px 0 16px" }}>{t.pricing.manualIntro}</p>
+            <p className="muted small" style={{ margin: "8px 0 4px" }}>{t.pricing.manualIntro}</p>
+            {!paidSent && <p className="small" style={{ margin: "0 0 16px", color: "var(--lantern)", fontWeight: 600 }}>{t.pricing.iPaidHint}</p>}
 
             {paidSent ? (
               <div className="banner small">✓ {t.pricing.iPaidSent}</div>
