@@ -88,6 +88,24 @@ export default function AdminPage() {
     await loadPending();
   }
 
+  async function resetSubscription(userId, mode) {
+    setBusy(true);
+    await fetch("/api/admin/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
+      body: JSON.stringify({ userId, mode }),
+    });
+    setBusy(false);
+    // Re-lookup so the "Gói hiện tại" line reflects the reset immediately.
+    const r = await fetch("/api/admin/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: lookupResult?.email }),
+    });
+    const d = await r.json();
+    if (d.found) setLookupResult(d.user);
+  }
+
   async function dismiss(userId) {
     setBusy(true);
     await fetch("/api/admin/dismiss", {
@@ -227,14 +245,25 @@ export default function AdminPage() {
           >
             <div>
               <strong>{lookupResult.name}</strong> <span className="small muted">({lookupResult.email})</span>
-              <p className="small muted" style={{ marginTop: 2 }}>Gói hiện tại: {lookupResult.subscription.plan}</p>
+              <p className="small muted" style={{ marginTop: 2 }}>
+                Gói lưu: {lookupResult.subscription.plan} · Trạng thái thực tế:{" "}
+                {lookupResult.subscriptionStatus?.active
+                  ? `đang active (${lookupResult.subscriptionStatus.plan}${lookupResult.subscriptionStatus.daysLeft != null ? `, còn ${lookupResult.subscriptionStatus.daysLeft} ngày` : ""})`
+                  : "đã hết hạn"}
+              </p>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button className="btn sm lantern" disabled={busy} onClick={() => activateWithPlan(lookupResult.id, "monthly")}>
                 Kích hoạt hàng tháng
               </button>
               <button className="btn sm" disabled={busy} onClick={() => activateWithPlan(lookupResult.id, "yearly")}>
                 Kích hoạt hàng năm
+              </button>
+              <button className="btn sm ghost" disabled={busy} onClick={() => resetSubscription(lookupResult.id, "trial")}>
+                Đặt lại: dùng thử 7 ngày
+              </button>
+              <button className="btn sm ghost" disabled={busy} onClick={() => resetSubscription(lookupResult.id, "expired")}>
+                Đặt lại: hết hạn
               </button>
             </div>
           </div>

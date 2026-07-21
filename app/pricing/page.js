@@ -16,6 +16,7 @@ export default function PricingPage() {
   const [csrf, setCsrf] = useState("");
   const [paidSent, setPaidSent] = useState(false);
   const [checkoutMsg, setCheckoutMsg] = useState(null); // "success" | "cancelled" | null
+  const [cardUnavailable, setCardUnavailable] = useState(false);
 
   const sub = user?.subscriptionStatus;
   const rawSub = user?.subscription;
@@ -42,12 +43,13 @@ export default function PricingPage() {
 
   async function payWithCard(plan) {
     setBusy(true);
+    setCardUnavailable(false);
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (data.url) {
       window.location.href = data.url;
       return;
@@ -57,6 +59,11 @@ export default function PricingPage() {
       await refresh();
       setConfirming(null);
       setDone(true);
+    } else if (data.error === "card_payments_unavailable") {
+      // Card rails aren't live on this deployment — send them straight to
+      // the manual PayPal/Zalo flow instead of a dead end.
+      setCardUnavailable(true);
+      openManual(plan);
     }
   }
 
@@ -65,6 +72,11 @@ export default function PricingPage() {
     setManualPlan(plan);
     setPaidSent(false);
     ensureCsrf();
+  }
+
+  function closeManual() {
+    setManualPlan(null);
+    setCardUnavailable(false);
   }
 
   async function submitManualPaid(method) {
@@ -140,7 +152,9 @@ export default function PricingPage() {
         })}
       </div>
 
-      <p className="small muted" style={{ textAlign: "center", marginTop: 22 }}>{t.pricing.demoNote}</p>
+      {process.env.NODE_ENV !== "production" && (
+        <p className="small muted" style={{ textAlign: "center", marginTop: 22 }}>{t.pricing.demoNote}</p>
+      )}
       {user && (
         <p style={{ textAlign: "center", marginTop: 8 }}>
           <Link href="/home" className="small" style={{ color: "var(--pine-deep)", fontWeight: 600 }}>← {t.nav.home}</Link>
@@ -175,9 +189,10 @@ export default function PricingPage() {
 
       {/* Step 2: PayPal / Zalo manual payment */}
       {manualPlan && (
-        <div className="modal-backdrop" onClick={() => !busy && setManualPlan(null)}>
+        <div className="modal-backdrop" onClick={() => !busy && closeManual()}>
           <div className="card" style={{ maxWidth: 420, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
             <h3>{t.pricing.manualTitle}</h3>
+            {cardUnavailable && <div className="banner small" style={{ margin: "8px 0" }}>{t.pricing.cardUnavailable}</div>}
             <p className="muted small" style={{ margin: "8px 0 16px" }}>{t.pricing.manualIntro}</p>
 
             {paidSent ? (
@@ -204,7 +219,7 @@ export default function PricingPage() {
               </>
             )}
 
-            <button className="btn ghost sm" style={{ width: "100%", marginTop: 16 }} onClick={() => setManualPlan(null)}>{t.pricing.cancel}</button>
+            <button className="btn ghost sm" style={{ width: "100%", marginTop: 16 }} onClick={() => closeManual()}>{t.pricing.cancel}</button>
           </div>
         </div>
       )}
