@@ -2,13 +2,16 @@
 import { useState } from "react";
 import { useApp } from "@/components/Providers";
 import { ZALO_CONTACT_NAME, ZALO_QR_IMAGE } from "@/lib/manualPayment";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
-// "Liên hệ / Hỗ trợ" — a text link that opens a small contact form. Never
-// prints the admin's email anywhere in the markup: the message is emailed
+// "Liên hệ / Hỗ trợ" — a text link that opens a small contact form. Normal
+// path never prints the admin's email anywhere: the message is emailed
 // server-side (app/api/support) with reply_to set to the sender, so replying
-// from the inbox goes straight back to them. If email isn't configured
-// (RESEND_API_KEY/ADMIN_EMAIL), falls back to the same Zalo contact already
-// used for manual payments, instead of pretending the message was sent.
+// from the inbox goes straight back to them. If that channel isn't working
+// (RESEND_API_KEY/ADMIN_EMAIL missing on the server, or the Resend call
+// fails), falls back to a plain mailto: link plus the Zalo contact already
+// used for manual payments — better than pretending the message was sent
+// and silently losing it.
 export default function SupportLink({ label, className, style }) {
   const { user, lang } = useApp();
   const [open, setOpen] = useState(false);
@@ -33,7 +36,8 @@ export default function SupportLink({ label, className, style }) {
           sending: "Đang gửi…",
           cancel: "Đóng",
           sentOk: "✓ Đã gửi! Chúng tôi sẽ phản hồi sớm nhất có thể.",
-          unavailable: "Kênh email hiện chưa khả dụng — bạn nhắn Zalo giúp mình nhé:",
+          unavailable: "Form gửi trong app hiện chưa khả dụng — bạn gửi email hoặc nhắn Zalo giúp mình nhé:",
+          mailBtn: "Gửi email",
           error: "Có lỗi khi gửi, thử lại giúp mình nhé.",
         }
       : {
@@ -47,7 +51,8 @@ export default function SupportLink({ label, className, style }) {
           sending: "Sending…",
           cancel: "Close",
           sentOk: "✓ Sent! We'll get back to you soon.",
-          unavailable: "Email isn't available right now — please message us on Zalo:",
+          unavailable: "The in-app form isn't available right now — please email us or message on Zalo:",
+          mailBtn: "Send email",
           error: "Something went wrong sending that — please try again.",
         };
 
@@ -103,8 +108,16 @@ export default function SupportLink({ label, className, style }) {
             ) : result === "unavailable" ? (
               <div style={{ marginTop: 12 }}>
                 <div className="banner small">{t.unavailable}</div>
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}${message ? `?body=${encodeURIComponent(message)}` : ""}`}
+                  className="btn lantern"
+                  style={{ width: "100%", textAlign: "center", display: "block", marginTop: 12 }}
+                >
+                  {t.mailBtn}
+                </a>
+                <div style={{ textAlign: "center", margin: "14px 0 4px", color: "var(--muted, #888)" }}>·</div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ZALO_QR_IMAGE} alt="Zalo QR" style={{ width: 140, height: 140, display: "block", margin: "12px auto 8px", borderRadius: 8 }} />
+                <img src={ZALO_QR_IMAGE} alt="Zalo QR" style={{ width: 140, height: 140, display: "block", margin: "4px auto 8px", borderRadius: 8 }} />
                 <p className="small muted" style={{ textAlign: "center" }}>Zalo: {ZALO_CONTACT_NAME}</p>
               </div>
             ) : (
