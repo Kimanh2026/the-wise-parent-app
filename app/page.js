@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useApp } from "@/components/Providers";
 import Enso from "@/components/Enso";
+import SupportLink from "@/components/SupportLink";
 
 const MODULES = [
   ["🪷", { en: "AI Parenting Coach", vi: "AI Coach Nuôi Dạy Con" }, { en: "Describe any moment — get warm, practical advice grounded in wisdom and science.", vi: "Kể bất kỳ tình huống nào — nhận lời khuyên ấm áp, thực tế dựa trên trí tuệ và khoa học." }],
@@ -83,6 +84,8 @@ export default function Landing() {
 
       <footer className="muted small" style={{ textAlign: "center", padding: "20px 16px 40px" }}>
         The Wise Parent · {t.byBrand} · © {new Date().getFullYear()}
+        {" · "}
+        <SupportLink style={{ color: "inherit", textDecoration: "underline" }} />
       </footer>
     </div>
   );

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/Providers";
+import SupportLink from "@/components/SupportLink";
 
 export default function SettingsPage() {
   const { user, t, lang, setLang, theme, setTheme, refresh } = useApp();
@@ -162,7 +163,11 @@ export default function SettingsPage() {
         <p className="small muted" style={{ marginTop: 10 }}>The Wise Parent · {t.byBrand}</p>
       </div>
 
-      <button className="btn danger" onClick={logout} style={{ marginTop: 4 }}>{t.settings.signout}</button>
+      <p style={{ textAlign: "center", marginTop: 18 }}>
+        <SupportLink className="small" style={{ color: "var(--pine-deep)", fontWeight: 600, textDecoration: "underline" }} />
+      </p>
+
+      <button className="btn danger" onClick={logout} style={{ marginTop: 12 }}>{t.settings.signout}</button>
     </div>
   );
 }
