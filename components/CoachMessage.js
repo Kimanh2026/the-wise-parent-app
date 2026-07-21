@@ -7,10 +7,15 @@
 // Anything else is rendered as plain paragraphs, same as before.
 
 function renderInline(text, keyPrefix) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter((p) => p !== "");
+  // Bold (**text**) is matched before italic (*text*) so "**x**" isn't
+  // mistaken for an italic span with leftover stars.
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter((p) => p !== "");
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return <strong key={`${keyPrefix}-b${i}`}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return <em key={`${keyPrefix}-i${i}`}>{part.slice(1, -1)}</em>;
     }
     return <span key={`${keyPrefix}-t${i}`}>{part}</span>;
   });
