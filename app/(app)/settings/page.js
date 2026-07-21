@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [cancelConfirming, setCancelConfirming] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [cancelError, setCancelError] = useState(false);
 
   useEffect(() => {
     if (user) setName(user.name || "");
@@ -62,6 +63,7 @@ export default function SettingsPage() {
 
   async function cancelSubscription() {
     setCancelBusy(true);
+    setCancelError(false);
     const csrfRes = await fetch("/api/csrf");
     const { token } = await csrfRes.json();
     const res = await fetch("/api/subscription/cancel", {
@@ -73,6 +75,10 @@ export default function SettingsPage() {
       setCancelConfirming(false);
       setCancelled(true);
       await refresh();
+    } else {
+      // e.g. PayPal's cancel API failed — don't tell the user it's
+      // cancelled while they might still be getting billed.
+      setCancelError(true);
     }
   }
 
@@ -179,6 +185,9 @@ export default function SettingsPage() {
           <div className="card" style={{ maxWidth: 380, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
             <h3>{t.settings.cancelConfirmTitle}</h3>
             <p className="muted small" style={{ marginTop: 10 }}>{t.settings.cancelConfirmBody}</p>
+            {cancelError && (
+              <p className="small" style={{ marginTop: 10, color: "#c0392b" }}>{t.settings.cancelErrorNote}</p>
+            )}
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <button className="btn danger" style={{ flex: 1 }} disabled={cancelBusy} onClick={cancelSubscription}>
                 {cancelBusy ? t.common.loading : t.settings.cancelConfirmYes}

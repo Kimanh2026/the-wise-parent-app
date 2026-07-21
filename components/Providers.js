@@ -42,8 +42,10 @@ export default function Providers({ children }) {
         if (data.user.theme) setThemeRaw(data.user.theme);
         if (data.user.language) setLangRaw(data.user.language);
       }
+      return data;
     } catch {
       setUser(null);
+      return null;
     }
   }, []);
 
