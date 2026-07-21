@@ -13,8 +13,6 @@ export default function PricingPage() {
   const [manualPlan, setManualPlan] = useState(null); // "monthly" | "yearly" | null — manual-payment modal
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const [csrf, setCsrf] = useState("");
-  const [paidSent, setPaidSent] = useState(false);
   const [checkoutMsg, setCheckoutMsg] = useState(null); // "success" | "cancelled" | null
   const [cardUnavailable, setCardUnavailable] = useState(false);
 
@@ -32,14 +30,6 @@ export default function PricingPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function ensureCsrf() {
-    if (csrf) return csrf;
-    const res = await fetch("/api/csrf");
-    const data = await res.json();
-    setCsrf(data.token);
-    return data.token;
-  }
 
   async function payWithCard(plan) {
     setBusy(true);
@@ -70,28 +60,11 @@ export default function PricingPage() {
   function openManual(plan) {
     setConfirming(null);
     setManualPlan(plan);
-    setPaidSent(false);
-    ensureCsrf();
   }
 
   function closeManual() {
     setManualPlan(null);
     setCardUnavailable(false);
-  }
-
-  async function submitManualPaid(method) {
-    setBusy(true);
-    const token = await ensureCsrf();
-    const res = await fetch("/api/manual-payment/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-csrf-token": token },
-      body: JSON.stringify({ plan: manualPlan, method }),
-    });
-    setBusy(false);
-    if (res.ok) {
-      setPaidSent(true);
-      await refresh();
-    }
   }
 
   const PLANS = [
@@ -193,32 +166,19 @@ export default function PricingPage() {
           <div className="card" style={{ maxWidth: 420, width: "92%", padding: 28 }} onClick={(e) => e.stopPropagation()}>
             <h3>{t.pricing.manualTitle}</h3>
             {cardUnavailable && <div className="banner small" style={{ margin: "8px 0" }}>{t.pricing.cardUnavailable}</div>}
-            <p className="muted small" style={{ margin: "8px 0 4px" }}>{t.pricing.manualIntro}</p>
-            {!paidSent && <p className="small" style={{ margin: "0 0 16px", color: "var(--lantern)", fontWeight: 600 }}>{t.pricing.iPaidHint}</p>}
+            <p className="muted small" style={{ margin: "8px 0 16px" }}>{t.pricing.manualIntro}</p>
 
-            {paidSent ? (
-              <div className="banner small">✓ {t.pricing.iPaidSent}</div>
-            ) : (
-              <>
-                <div style={{ paddingBottom: 16, borderBottom: "1px solid #eee" }}>
-                  <a href={paypalMeLink(manualPlan)} target="_blank" rel="noopener noreferrer" className="btn" style={{ width: "100%", textAlign: "center", display: "block", marginBottom: 10 }}>
-                    {t.pricing.paypalBtn}
-                  </a>
-                  <button className="btn lantern sm" style={{ width: "100%" }} disabled={busy} onClick={() => submitManualPaid("paypal")}>
-                    {t.pricing.iPaid}
-                  </button>
-                </div>
-                <div style={{ paddingTop: 16 }}>
-                  <p style={{ fontWeight: 600, marginBottom: 8 }}>{t.pricing.zaloTitle}</p>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ZALO_QR_IMAGE} alt="Zalo QR" style={{ width: 160, height: 160, display: "block", margin: "0 auto 8px", borderRadius: 8 }} />
-                  <p className="small muted" style={{ textAlign: "center" }}>{(ZALO_NOTE[lang] || ZALO_NOTE.en)} ({ZALO_CONTACT_NAME})</p>
-                  <button className="btn lantern sm" style={{ width: "100%", marginTop: 10 }} disabled={busy} onClick={() => submitManualPaid("zalo")}>
-                    {t.pricing.iPaid}
-                  </button>
-                </div>
-              </>
-            )}
+            <div style={{ paddingBottom: 16, borderBottom: "1px solid #eee" }}>
+              <a href={paypalMeLink(manualPlan)} target="_blank" rel="noopener noreferrer" className="btn" style={{ width: "100%", textAlign: "center", display: "block" }}>
+                {t.pricing.paypalBtn}
+              </a>
+            </div>
+            <div style={{ paddingTop: 16 }}>
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>{t.pricing.zaloTitle}</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ZALO_QR_IMAGE} alt="Zalo QR" style={{ width: 160, height: 160, display: "block", margin: "0 auto 8px", borderRadius: 8 }} />
+              <p className="small muted" style={{ textAlign: "center" }}>{(ZALO_NOTE[lang] || ZALO_NOTE.en)} ({ZALO_CONTACT_NAME})</p>
+            </div>
 
             <button className="btn ghost sm" style={{ width: "100%", marginTop: 16 }} onClick={() => closeManual()}>{t.pricing.cancel}</button>
           </div>
