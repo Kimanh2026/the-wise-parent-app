@@ -15,6 +15,7 @@ export default function AdminPage() {
   const [lookupEmail, setLookupEmail] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
   const [lookupError, setLookupError] = useState("");
+  const [giftReason, setGiftReason] = useState("mua Ebook Kênh Ra Tiền");
 
   async function getCsrf() {
     const r = await fetch("/api/csrf");
@@ -86,6 +87,23 @@ export default function AdminPage() {
     setLookupResult(null);
     setLookupEmail("");
     await loadPending();
+  }
+
+  async function giftAccess(userId, reason) {
+    setBusy(true);
+    await fetch("/api/admin/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
+      body: JSON.stringify({ userId, plan: "gifted", giftedFrom: reason.trim() || null }),
+    });
+    setBusy(false);
+    const r = await fetch("/api/admin/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: lookupResult?.email }),
+    });
+    const d = await r.json();
+    if (d.found) setLookupResult(d.user);
   }
 
   async function resetSubscription(userId, mode) {
@@ -250,6 +268,9 @@ export default function AdminPage() {
                 {lookupResult.subscriptionStatus?.active
                   ? `đang active (${lookupResult.subscriptionStatus.plan}${lookupResult.subscriptionStatus.daysLeft != null ? `, còn ${lookupResult.subscriptionStatus.daysLeft} ngày` : ""})`
                   : "đã hết hạn"}
+                {lookupResult.subscription.plan === "gifted" && lookupResult.subscription.giftedFrom && (
+                  <> · Lý do tặng: {lookupResult.subscription.giftedFrom}</>
+                )}
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -264,6 +285,17 @@ export default function AdminPage() {
               </button>
               <button className="btn sm ghost" disabled={busy} onClick={() => resetSubscription(lookupResult.id, "expired")}>
                 Đặt lại: hết hạn
+              </button>
+            </div>
+            <div style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", borderTop: "1px solid #eee", paddingTop: 10, marginTop: 4 }}>
+              <input
+                style={{ flex: 1, minWidth: 220 }}
+                placeholder="Lý do tặng, vd: mua Ebook Kênh Ra Tiền"
+                value={giftReason}
+                onChange={(e) => setGiftReason(e.target.value)}
+              />
+              <button className="btn sm lantern" disabled={busy} onClick={() => giftAccess(lookupResult.id, giftReason)}>
+                🎁 Tặng miễn phí vĩnh viễn
               </button>
             </div>
           </div>

@@ -116,47 +116,58 @@ export default function PricingPage() {
         {checkoutMsg === "cancelled" && <div className="banner small" style={{ display: "inline-block", marginTop: 14 }}>{t.pricing.checkoutCancelled}</div>}
       </header>
 
-      <div className="grid2">
-        {PLANS.map((p) => {
-          const isCurrent = sub?.plan === p.id;
-          return (
-            <div key={p.id} className={`card plan ${p.popular ? "popular" : ""}`}>
-              {p.popular && <span className="badge-pop">{t.pricing.popular}</span>}
-              <h3>{p.id === "monthly" ? t.pricing.monthly : t.pricing.yearlyName}</h3>
-              <p style={{ margin: "10px 0 2px" }}>
-                <span className="display" style={{ fontSize: "2.2rem", fontWeight: 700 }}>{p.price}</span>
-                <span className="muted"> / {p.per}</span>
-              </p>
-              {p.note && <p className="small" style={{ color: "var(--lantern)", fontWeight: 600 }}>{p.note}</p>}
-              <ul className="checklist" style={{ margin: "14px 0 18px" }}>
-                {t.pricing.features.map((f) => <li key={f}>{f}</li>)}
-              </ul>
-              {user ? (
-                <button
-                  className={p.popular ? "btn lantern" : "btn"}
-                  style={{ width: "100%" }}
-                  disabled={isCurrent || busy}
-                  onClick={() => setConfirming(p.id)}
-                >
-                  {isCurrent ? `✓ ${t.pricing.current}` : t.pricing.choose}
-                </button>
-              ) : (
-                <Link href="/signup" className={p.popular ? "btn lantern" : "btn"} style={{ width: "100%", textAlign: "center" }}>
-                  {t.landing.cta}
-                </Link>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {sub?.plan === "gifted" ? (
+        <div className="card fade-in" style={{ maxWidth: 480, margin: "0 auto", textAlign: "center", padding: 36 }}>
+          <Enso size={54} />
+          <h2 style={{ margin: "16px 0 8px" }}>{t.gift.pricingTitle}</h2>
+          <p className="muted">{t.gift.pricingBody(user.subscription?.giftedFrom)}</p>
+          <Link href="/home" className="btn lantern">{t.gift.pricingCta}</Link>
+        </div>
+      ) : (
+        <>
+          <div className="grid2">
+            {PLANS.map((p) => {
+              const isCurrent = sub?.plan === p.id;
+              return (
+                <div key={p.id} className={`card plan ${p.popular ? "popular" : ""}`}>
+                  {p.popular && <span className="badge-pop">{t.pricing.popular}</span>}
+                  <h3>{p.id === "monthly" ? t.pricing.monthly : t.pricing.yearlyName}</h3>
+                  <p style={{ margin: "10px 0 2px" }}>
+                    <span className="display" style={{ fontSize: "2.2rem", fontWeight: 700 }}>{p.price}</span>
+                    <span className="muted"> / {p.per}</span>
+                  </p>
+                  {p.note && <p className="small" style={{ color: "var(--lantern)", fontWeight: 600 }}>{p.note}</p>}
+                  <ul className="checklist" style={{ margin: "14px 0 18px" }}>
+                    {t.pricing.features.map((f) => <li key={f}>{f}</li>)}
+                  </ul>
+                  {user ? (
+                    <button
+                      className={p.popular ? "btn lantern" : "btn"}
+                      style={{ width: "100%" }}
+                      disabled={isCurrent || busy}
+                      onClick={() => setConfirming(p.id)}
+                    >
+                      {isCurrent ? `✓ ${t.pricing.current}` : t.pricing.choose}
+                    </button>
+                  ) : (
+                    <Link href="/signup" className={p.popular ? "btn lantern" : "btn"} style={{ width: "100%", textAlign: "center" }}>
+                      {t.landing.cta}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
-      {process.env.NODE_ENV !== "production" && (
-        <p className="small muted" style={{ textAlign: "center", marginTop: 22 }}>{t.pricing.demoNote}</p>
-      )}
-      {user && (
-        <p style={{ textAlign: "center", marginTop: 8 }}>
-          <Link href="/home" className="small" style={{ color: "var(--pine-deep)", fontWeight: 600 }}>← {t.nav.home}</Link>
-        </p>
+          {process.env.NODE_ENV !== "production" && (
+            <p className="small muted" style={{ textAlign: "center", marginTop: 22 }}>{t.pricing.demoNote}</p>
+          )}
+          {user && (
+            <p style={{ textAlign: "center", marginTop: 8 }}>
+              <Link href="/home" className="small" style={{ color: "var(--pine-deep)", fontWeight: 600 }}>← {t.nav.home}</Link>
+            </p>
+          )}
+        </>
       )}
 
       {/* Step 1: choose how to pay */}

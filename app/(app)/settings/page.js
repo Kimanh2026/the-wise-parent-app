@@ -89,7 +89,8 @@ export default function SettingsPage() {
   }
 
   const planLabel =
-    sub.plan === "trial" ? t.settings.trial
+    sub.plan === "gifted" ? t.gift.settingsLabel
+    : sub.plan === "trial" ? t.settings.trial
     : sub.plan === "monthly" ? t.settings.monthly
     : sub.plan === "yearly" ? t.settings.yearly
     : t.settings.expired;
@@ -159,6 +160,7 @@ export default function SettingsPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
           <div>
             <span className={`chip ${sub.active ? "amber" : ""}`}>{planLabel}</span>
+            {sub.plan === "gifted" && <p className="small muted" style={{ marginTop: 8 }}>{t.gift.settingsBody(user.subscription?.giftedFrom)}</p>}
             {sub.plan === "trial" && <p className="small muted" style={{ marginTop: 8 }}>{t.pricing.trialBanner(sub.daysLeft)}</p>}
             {sub.plan === "expired" && <p className="small muted" style={{ marginTop: 8 }}>{t.pricing.expiredBanner}</p>}
             {user.subscription?.stripeStatus === "past_due" && (
@@ -172,7 +174,7 @@ export default function SettingsPage() {
                 {billingBusy ? t.common.loading : t.settings.manageBilling}
               </button>
             )}
-            <Link href="/pricing" className="btn secondary sm">{t.settings.manage}</Link>
+            {sub.plan !== "gifted" && <Link href="/pricing" className="btn secondary sm">{t.settings.manage}</Link>}
             {!user.subscription?.stripeCustomerId && (sub.plan === "monthly" || sub.plan === "yearly") && (
               <button className="btn ghost sm" onClick={() => setCancelConfirming(true)}>{t.settings.cancelPlan}</button>
             )}

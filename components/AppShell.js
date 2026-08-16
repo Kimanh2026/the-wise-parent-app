@@ -54,6 +54,11 @@ export default function AppShell({ children }) {
           </Link>
         ))}
         <div style={{ flex: 1 }} />
+        {sub.plan === "gifted" && (
+          <Link href="/settings" className="banner small" style={{ display: "block" }}>
+            {t.gift.sidebarBanner}
+          </Link>
+        )}
         {sub.plan === "trial" && (
           <Link href="/pricing" className="banner small" style={{ display: "block" }}>
             ⏳ {t.pricing.trialBanner(sub.daysLeft)}

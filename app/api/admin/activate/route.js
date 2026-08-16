@@ -11,16 +11,18 @@ export async function POST(req) {
   if (!isAdmin()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!verifyCsrf(req)) return NextResponse.json({ error: "csrf" }, { status: 403 });
 
-  const { userId, plan: explicitPlan } = await req.json().catch(() => ({}));
+  const { userId, plan: explicitPlan, giftedFrom } = await req.json().catch(() => ({}));
   const user = await findUserById(userId);
   if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const plan = explicitPlan || user.subscription.pendingRequest?.plan;
-  if (!["monthly", "yearly"].includes(plan)) {
+  if (!["monthly", "yearly", "gifted"].includes(plan)) {
     return NextResponse.json({ error: "invalid_plan" }, { status: 400 });
   }
 
   const { pendingRequest, ...rest } = user.subscription;
-  await updateUser(userId, { subscription: { ...rest, plan, renewedAt: Date.now() } });
+  const subscription = { ...rest, plan, renewedAt: Date.now() };
+  if (plan === "gifted") subscription.giftedFrom = giftedFrom || rest.giftedFrom || null;
+  await updateUser(userId, { subscription });
   return NextResponse.json({ ok: true });
 }
