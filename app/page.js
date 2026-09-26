@@ -45,11 +45,9 @@ export default function Landing() {
           )}
         </h1>
         <p className="muted" style={{ fontSize: "1.1rem", margin: "18px auto 26px", maxWidth: 560 }}>{t.tagline}</p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <Link href={user ? "/home" : "/signup"} className="btn lantern">{t.landing.cta}</Link>
-          <Link href="/pricing" className="btn secondary">{t.landing.cta2}</Link>
         </div>
-        <p className="small muted" style={{ marginTop: 14 }}>{t.auth.trialNote}</p>
       </section>
 
       <section style={{ maxWidth: 980, margin: "0 auto", padding: "10px clamp(16px,4vw,48px) 30px" }}>
