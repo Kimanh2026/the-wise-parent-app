@@ -32,8 +32,8 @@ CSRF is not implemented as a separate token, and that's an intentional call, not
 
 Still missing on purpose for this beta: email verification, password reset, per-account (not just per-IP) login throttling. These are the next items to add before charging real money — password reset in particular needs an email-sending provider (e.g. Resend) that isn't wired up yet.
 
-## 8. Subscription is a real flow with a demo checkout
-Trial (7 days, timestamp on the user record) → expiry computed on every request → non-active users hit a paywall on app pages and a 402 on the coach API. "Checkout" activates the plan instantly and says so on the page ("Demo checkout — no real payment is made"). Rationale: validates the full monetization UX without pretending to process cards. Stripe can slot into `POST /api/subscribe` later.
+## 8. Subscription flow built (trial → paywall → Stripe/PayPal), then turned off
+Originally: 7-day trial → expiry computed on every request → non-active users hit a paywall on app pages and a 402 on the coach API, with real Stripe/PayPal checkout and a demo-checkout fallback. This full flow still exists in the code (`app/api/checkout`, `app/api/subscribe`, `app/api/webhooks/*`, `lib/stripe.js`, `lib/manualPayment.js`) but is no longer wired to anything — see #13.
 
 ## 9. Content rotates by date, not randomness
 Story, tip, and mission of the day are selected by `floor(now / 86400000) % length`. Every user sees the same "today" content, it never repeats within a cycle, and it's deterministic for testing. Streaks count consecutive days on which the daily mission was completed.
@@ -49,3 +49,8 @@ Chose Google Identity Services' client-side button + ID-token verification over 
 
 ## 12. Bilingual as data, not translation layer
 All content (stories, library, reset days, tips, coach fallbacks) is authored in both English and Vietnamese side by side (`{ en: {...}, vi: {...} }`), and the UI dictionary lives in `lib/i18n.js`. Language is a per-user setting and also affects the live coach's reply language.
+
+## 13. App made fully free (paywall removed, password kept)
+No real customer had ever paid at the point this changed, so there was nothing to migrate/refund. `subscriptionStatus()` in `lib/auth.js` now always returns `{ active: true }` — the trial countdown, the in-app paywall (`AppShell`'s old `Paywall` component), the 402 on `/api/coach`, and the Pricing/Settings plan UI are all removed or replaced with a simple "it's free" message. Payment infrastructure (Stripe, PayPal, manual/Zalo, `/admin` gift-granting) is intentionally left in the codebase but unreachable from any page, in case charging is reintroduced later.
+
+Password sign-in was **kept** (a passwordless, email-only version was built and then explicitly reverted mid-session): the trade-off of "anyone who knows/guesses an email reads that account's data" was judged not worth the extra convenience once weighed against real accounts holding children's names/ages and AI Coach conversation history. Email+password (or Google sign-in) remains the only way in.
