@@ -7,7 +7,6 @@ import Enso from "./Enso";
 
 const NAV = [
   { href: "/home", key: "home", ico: "🏮" },
-  { href: "/coach", key: "coach", ico: "🪷" },
   { href: "/stories", key: "stories", ico: "📖" },
   { href: "/library", key: "library", ico: "🌿" },
   { href: "/toolkit", key: "toolkit", ico: "🧰" },
@@ -15,7 +14,7 @@ const NAV = [
   { href: "/progress", key: "progress", ico: "🌱" },
   { href: "/settings", key: "settings", ico: "⚙️" },
 ];
-const MOBILE_NAV = NAV.filter((n) => ["home", "coach", "stories", "toolkit", "settings"].includes(n.key));
+const MOBILE_NAV = NAV.filter((n) => ["home", "stories", "library", "toolkit", "settings"].includes(n.key));
 
 export default function AppShell({ children }) {
   const { user, t } = useApp();

@@ -1,7 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useApp } from "@/components/Providers";
 import { getStoryOfTheDay } from "@/content/stories";
 import { getTipOfTheDay, getMissionOfTheDay, dateKey } from "@/content/tips";
@@ -10,8 +8,6 @@ import { RESET_DAYS } from "@/content/reset";
 
 export default function HomePage() {
   const { user, state, updateState, t, lang } = useApp();
-  const router = useRouter();
-  const [quick, setQuick] = useState("");
 
   if (!state) return null;
 
@@ -38,12 +34,6 @@ export default function HomePage() {
       missions: { ...(state.missions || {}), [today]: true },
       streak: { count, lastDay: today, best: Math.max(s.best || 0, count) },
     });
-  }
-
-  function askQuick(e) {
-    e.preventDefault();
-    if (!quick.trim()) return router.push("/coach");
-    router.push("/coach?q=" + encodeURIComponent(quick.trim()));
   }
 
   // continue learning: first 2 library items not yet favorited/read
@@ -88,20 +78,6 @@ export default function HomePage() {
             {missionDone ? `✓ ${t.home.missionDone}` : t.home.markDone}
           </button>
         </div>
-      </div>
-
-      {/* Coach shortcut */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <span className="kicker">{t.home.askCoach}</span>
-        <form onSubmit={askQuick} style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-          <input
-            style={{ flex: 1, minWidth: 200 }}
-            placeholder={t.home.coachPrompt}
-            value={quick}
-            onChange={(e) => setQuick(e.target.value)}
-          />
-          <button className="btn">🪷 {t.coach.send}</button>
-        </form>
       </div>
 
       {/* Reset progress */}

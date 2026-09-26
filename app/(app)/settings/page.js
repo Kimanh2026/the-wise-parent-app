@@ -10,15 +10,10 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [savedNote, setSavedNote] = useState(false);
   const [child, setChild] = useState({ name: "", age: "" });
-  const [aiLive, setAiLive] = useState(null);
 
   useEffect(() => {
     if (user) setName(user.name || "");
   }, [user]);
-
-  useEffect(() => {
-    fetch("/api/coach").then((r) => r.json()).then((d) => setAiLive(Boolean(d.live))).catch(() => setAiLive(false));
-  }, []);
 
   if (!user) return null;
   const children = user.children || [];
@@ -120,16 +115,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* AI status */}
       <div className="card">
         <h3>{t.settings.about}</h3>
-        <p className="small muted" style={{ marginTop: 6 }}>{t.settings.aiStatus}</p>
-        <p style={{ marginTop: 10 }}>
-          {aiLive === null ? <span className="muted small">{t.common.loading}</span>
-            : aiLive ? <span className="chip amber">● {t.settings.aiLive}</span>
-            : <span className="chip">○ {t.settings.aiFallback}</span>}
-        </p>
-        <p className="small muted" style={{ marginTop: 10 }}>The Wise Parent · {t.byBrand}</p>
+        <p className="small muted" style={{ marginTop: 6 }}>The Wise Parent · {t.byBrand}</p>
       </div>
 
       <p style={{ textAlign: "center", marginTop: 18 }}>

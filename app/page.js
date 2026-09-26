@@ -5,7 +5,6 @@ import Enso from "@/components/Enso";
 import SupportLink from "@/components/SupportLink";
 
 const MODULES = [
-  ["🪷", { en: "AI Parenting Coach", vi: "AI Coach Nuôi Dạy Con" }, { en: "Describe any moment — get warm, practical advice grounded in wisdom and science.", vi: "Kể bất kỳ tình huống nào — nhận lời khuyên ấm áp, thực tế dựa trên trí tuệ và khoa học." }],
   ["📖", { en: "Daily Stories", vi: "Truyện Mỗi Ngày" }, { en: "A 3-minute story every day: ancient wisdom, a science insight, one action.", vi: "Mỗi ngày một truyện 3 phút: trí tuệ xưa, một hiểu biết khoa học, một hành động." }],
   ["🌿", { en: "Parenting Library", vi: "Thư Viện" }, { en: "Deep guides: screens, gaming, respect, gratitude, discipline, emotions and more.", vi: "Hướng dẫn sâu: màn hình, game, lễ phép, biết ơn, kỷ luật, cảm xúc…" }],
   ["🧰", { en: "Family Toolkit", vi: "Bộ Công Cụ Gia Đình" }, { en: "Family rules, routines, reward chart, screen tracker, emotion sheet — all printable.", vi: "Nội quy, lịch sinh hoạt, bảng thưởng, theo dõi màn hình, nhật ký cảm xúc — in được." }],
